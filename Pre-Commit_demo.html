@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>CI/CD 演進史與 Pre-Commit</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 40px; color: #333; }
+        h1 { margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        
+        /* 頁籤按鈕設計 */
+        .tabs { display: flex; gap: 15px; margin-bottom: 40px; }
+        .tab-btn { padding: 12px 24px; font-size: 18px; font-weight: bold; cursor: pointer; background: #e0e0e0; border: none; border-radius: 30px; transition: 0.3s; color: #555; }
+        .tab-btn:hover { background: #d5d5d5; }
+        .tab-btn.active { background: #0056b3; color: white; box-shadow: 0 4px 10px rgba(0,86,179,0.3); }
+
+        /* 畫布區塊 */
+        .canvas { background: white; width: 900px; min-height: 350px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        
+        /* 節點與流程線 */
+        .pipeline { display: flex; align-items: center; gap: 20px; width: 100%; justify-content: center; }
+        .node { padding: 20px; border-radius: 10px; border: 3px solid #ccc; background: #fafafa; text-align: center; font-weight: bold; font-size: 16px; width: 140px; position: relative; transition: all 0.4s; }
+        .arrow { font-size: 30px; color: #aaa; font-weight: bold; }
+        
+        /* 狀態樣式 */
+        .node.danger { border-color: #dc3545; background: #f8d7da; color: #721c24; }
+        .node.warning { border-color: #ffc107; background: #fff3cd; color: #856404; animation: shake 1s infinite; }
+        .node.success { border-color: #28a745; background: #d4edda; color: #155724; }
+        .node.shield { border-color: #0dcaf0; background: #cff4fc; color: #055160; border-style: dashed; }
+        
+        /* 解說文字區 */
+        .description { margin-top: 40px; padding: 20px; background: #f8f9fa; border-left: 5px solid #0056b3; width: 100%; font-size: 18px; line-height: 1.6; border-radius: 4px; }
+        .highlight-red { color: #dc3545; font-weight: bold; }
+        .highlight-green { color: #28a745; font-weight: bold; }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+        
+        /* 隱藏元素 */
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <h1>🚀 開發流程演進史</h1>
+    <div class="subtitle">為什麼我們需要 Pre-Commit？</div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="setStage(1)" id="btn-1">第一階段：遠古時代</button>
+        <button class="tab-btn" onclick="setStage(2)" id="btn-2">第二階段：導入 CI</button>
+        <button class="tab-btn" onclick="setStage(3)" id="btn-3">第三階段：現代化 (左移測試)</button>
+    </div>
+
+    <div class="canvas">
+        <!-- Stage 1 Pipeline -->
+        <div id="pipeline-1" class="pipeline">
+            <div class="node">💻 本地開發<br><small>(Local Dev)</small></div>
+            <div class="arrow">➔</div>
+            <div class="node">🦊 GitLab PR<br><small>(遠端儲存庫)</small></div>
+            <div class="arrow">➔</div>
+            <div class="node danger">🤬 Code Review<br><small>(人類大崩潰)</small></div>
+        </div>
+
+        <!-- Stage 2 Pipeline -->
+        <div id="pipeline-2" class="pipeline hidden">
+            <div class="node">💻 本地開發<br><small>(Local Dev)</small></div>
+            <div class="arrow">➔</div>
+            <div class="node">🦊 GitLab PR</div>
+            <div class="arrow">➔</div>
+            <div class="node warning">🔥 CI 伺服器<br><small>(大塞車/跑超久)</small></div>
+            <div class="arrow">➔</div>
+            <div class="node">🧐 Code Review</div>
+        </div>
+
+        <!-- Stage 3 Pipeline -->
+        <div id="pipeline-3" class="pipeline hidden">
+            <div class="node">💻 本地開發<br><small>(寫髒 Code)</small></div>
+            <div class="arrow" style="color: #0dcaf0;">⇄</div>
+            <div class="node shield">🛡️ Pre-Commit<br><small>(1秒攔截並修復)</small></div>
+            <div class="arrow">➔</div>
+            <div class="node">🦊 GitLab PR<br><small>(乾淨的 Code)</small></div>
+            <div class="arrow">➔</div>
+            <div class="node success">✅ CI 伺服器<br><small>(專注跑核心測試)</small></div>
+            <div class="arrow">➔</div>
+            <div class="node success">🍻 Code Review<br><small>(高價值討論)</small></div>
+        </div>
+
+        <!-- 說明文字 -->
+        <div id="desc-1" class="description">
+            <b>【痛點】：</b>直接 Push 程式碼，把排版、語法錯誤全部丟給 Reviewer。<br>
+            <b>【結果】：</b><span class="highlight-red">Code Review 變成「大家來找碴」</span>，吵縮排、找沒刪掉的 log，浪費工程師寶貴的時間。
+        </div>
+        <div id="desc-2" class="description hidden">
+            <b>【痛點】：</b>導入 CI 自動檢查，但把「雞毛蒜皮」的小錯誤都交給 CI 處理。<br>
+            <b>【結果】：</b><span class="highlight-red">反饋週期太長 (Feedback Loop)</span>。為了一個排版錯誤，Push 上去等 10 分鐘才知道失敗，一天下來開發節奏全碎。
+        </div>
+        <div id="desc-3" class="description hidden">
+            <b>【解決方案】：</b>在本地端建立防線，落實「左移測試 (Shift-Left)」。<br>
+            <b>【結果】：</b><span class="highlight-green">靠系統不靠意志力。</span>低級錯誤在你的電腦上 1 秒鐘就被攔截、甚至自動修復。CI 資源被釋放，Reviewer 終於能專注在核心的商業邏輯！
+        </div>
+    </div>
+
+    <script>
+        function setStage(stageNumber) {
+            // 重置所有按鈕
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            // 啟動當前按鈕
+            document.getElementById('btn-' + stageNumber).classList.add('active');
+
+            // 隱藏所有 Pipeline 和 說明
+            document.querySelectorAll('.pipeline').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('.description').forEach(d => d.classList.add('hidden'));
+
+            // 顯示選擇的階段
+            document.getElementById('pipeline-' + stageNumber).classList.remove('hidden');
+            document.getElementById('desc-' + stageNumber).classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
